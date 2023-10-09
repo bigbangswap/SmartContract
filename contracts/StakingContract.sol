@@ -21,7 +21,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address;
 
-    uint256 public RATE_PERCISION = 10000;
+    uint256 public RATE_PERCISION;
     uint256 public periodDuration;  // 24h
     uint256 public totalReleased;   // BBG total released 
     uint256 public startTime;
@@ -95,6 +95,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         __ReentrancyGuard_init();
 
         creator = msg.sender;
+	RATE_PERCISION = 10000;
         periodDuration = 86400;
         startTime = _startTime;
         operator = operatorAddress;
