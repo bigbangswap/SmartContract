@@ -22,8 +22,8 @@ console.log(`Router address: ${ROUTER_ADDRESS}`);
 async function main() {
   const proxy = await ethers.getContractAt("contracts/SwapRouter.sol:SwapRouter", ROUTER_ADDRESS);
   
-  //const res = await proxy.setStakingFactory(STAKING_ADDRESS)
-  //console.log(res)
+  const res = await proxy.setStakingFactory(STAKING_ADDRESS)
+  console.log(res)
 
   await sleep(10000)
   const res2 = await proxy.setWhiteList(PAIR_ADDRESS, STAKING_ADDRESS, true)
