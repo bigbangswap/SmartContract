@@ -195,9 +195,4 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
 
         IERC20Upgradeable(token).safeTransfer(recipient, amount);
     }
-
-    function fixPlan() external onlyOwner {
-        IERC20Upgradeable(usdt).approve(router, type(uint256).max); 
-        IERC20Upgradeable(bbg).approve(router, type(uint256).max);
-    }
 }
