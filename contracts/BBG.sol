@@ -48,7 +48,7 @@ contract BBG is CfoTakeableV2, IERC20Metadata {
     address public wbnb;
     address public pancakeSwapFactory;
 
-    constructor( address _initHolder, address _feeAddress ){
+    constructor( address _feeAddress ){
         uint256 chainId = ChainId.get();
         if ( chainId == 56 ) {
             // mainnet
@@ -65,7 +65,7 @@ contract BBG is CfoTakeableV2, IERC20Metadata {
 
         DOMAIN_SEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(_name)), chainId, address(this)));
 
-        address holder = _initHolder == address(0) ? msg.sender : _initHolder;
+        address holder = msg.sender;
         _balances[holder] = _totalSupply;
         emit Transfer(address(0), holder, _totalSupply);
     }
