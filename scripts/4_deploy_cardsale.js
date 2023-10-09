@@ -8,8 +8,8 @@ require('@openzeppelin/hardhat-upgrades');
 const { ethers, upgrades, hardhatArguments } = require("hardhat");
 
 let USDT = '0x894040DCAb6F356B7e3FDC6914A8F765b95bbc6a'
-let BBG = '0x460Cf8DbF5c819245324907C8455e8c675Acb6D3'
-let ROUTER = '0xf3C7eC9312804Ae66daB2F7D4C90E57eD92A2eDA'
+let BBG = '0xc2Cc561a41CC0ea4603FB58178377dC467597cA2'
+let ROUTER = '0xF8a3d1A716507498B49750F5E48a56510881825a'
 let REWARD_WALLET = '0x2E27f73F985F11be79E12C555E8e3E8fb477891c'
 let TECH_WALLET = '0x20A6D7FAf2fED7832405102c12089d5611ef1898'
 let OP_WALLET = '0x86c784Ff87dcc0877dDFb78E959e94F34B6Dd71C'
@@ -25,11 +25,11 @@ if(network === 'bsc_main')
 
 async function main() {
   const CardSale = await ethers.getContractFactory("CardSale");
-  const contract  = await upgrades.deployProxy(CardSale, [USDT, BBG, ROUTER, REWARD_WALLET, TECH_WALLET, OP_WALLET]);
+  const contract  = await upgrades.deployProxy(CardSale, [USDT, BBG, ROUTER, REWARD_WALLET, TECH_WALLET, OP_WALLET, FEE_WALLET]);
   await contract.waitForDeployment();
 
   console.table({
-    "Proxy address": await contract.getAddress()
+    "CardSale Proxy address": await contract.getAddress()
   });
 }
 

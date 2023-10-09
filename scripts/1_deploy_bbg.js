@@ -1,7 +1,7 @@
 const { ethers, hardhatArguments } = require("hardhat");
 
-const INIT_HOLDER = '0xD18cF39585dB64e46b1ceaf395aa8BC7b047bE85'
-const FEE_COLLECTOR = '0xD18cF39585dB64e46b1ceaf395aa8BC7b047bE85'
+const INIT_HOLDER = '0x1C23E94249DEFDb8c08a1529de0671Fc76eEff36'
+const FEE_COLLECTOR = '0x1C23E94249DEFDb8c08a1529de0671Fc76eEff36'
 
 const network = hardhatArguments.network;
 if(network === 'bsc_main')

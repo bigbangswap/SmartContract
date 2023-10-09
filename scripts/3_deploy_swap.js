@@ -4,13 +4,13 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-let feeCollector = '0xD18cF39585dB64e46b1ceaf395aa8BC7b047bE85'
+let feeCollector = '0x1C23E94249DEFDb8c08a1529de0671Fc76eEff36'
 let wbnbAddress = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd'
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
 {
-  feeCollector = '0xD18cF39585dB64e46b1ceaf395aa8BC7b047bE85'
-  wbnbAddress = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd'
+  feeCollector = ''
+  wbnbAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'
 } 
 
 async function main() {
