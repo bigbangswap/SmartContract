@@ -259,6 +259,7 @@ contract BBG is CfoTakeableV2, IERC20Metadata {
     }
 
     function setFeeTo(address _feeTo) external onlyOwner {
+	require(_feeTo != address(0), "invalid address");
         feeTo = _feeTo;
     }
 
