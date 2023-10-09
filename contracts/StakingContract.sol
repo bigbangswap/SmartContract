@@ -258,7 +258,6 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
 
         uint256 marketingAmount = receivedAmount * 10 / 100;
         uint256 techEcoAmount = receivedAmount * 10 / 100;
-        //uint256 communityFundAmount = receivedAmount * 30 / 100;
         uint256 lpFundAmount = receivedAmount * 50 / 100; 
         _transferTo(stakingToken, marketingFund, marketingAmount);
         _transferTo(stakingToken, techEcoFund, techEcoAmount);
