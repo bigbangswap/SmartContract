@@ -305,6 +305,7 @@ contract SwapRouter is Ownable {
     }
 
     function setStakingFactory(address _stakingFactory) external onlyOwner {
+	require(_stakingFactory != address(0), "invalid address");
         stakingFactory = _stakingFactory;
     }
 
