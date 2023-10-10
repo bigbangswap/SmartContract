@@ -40,8 +40,8 @@ contract BBG is CfoTakeableV2, IERC20Metadata {
     mapping(address => bool) public isOtherSwapPair;
 
     uint256 public constant RATE_PERCISION = 10000;
-    uint256 public buyFeeRate = 400;
-    uint256 public sellFeeRate = 400;
+    uint256 public buyFeeRate = 300;
+    uint256 public sellFeeRate = 600;
     address public feeTo;
 
     address public usdt;
