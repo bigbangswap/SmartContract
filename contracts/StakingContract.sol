@@ -72,7 +72,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     }
 
     modifier onlyOperator() {
-        require(msg.sender == creator || isRewardOperator[msg.sender] == true, "caller must be operator or creator");
+        require(msg.sender == creator || msg.sender == operator || isRewardOperator[msg.sender] == true, "caller must be operator or creator");
         _;
     }
 
@@ -110,6 +110,8 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         techEcoFund = _techEcoFund;
         marketingFund = _marketingFund;
         feeCollector = _feeTo;
+
+	isRewardOperator[operator] = true;
 
         IERC20Upgradeable(stakingToken).approve(router, type(uint256).max); 
         IERC20Upgradeable(rewardToken).approve(router, type(uint256).max);
