@@ -248,13 +248,15 @@ contract BBG is CfoTakeableV2, IERC20Metadata {
         isOtherSwapPair[_swapPair] = false;
     }
 
+    // max 10%
     function setBuyFeeRate(uint _rate) external onlyOwner {
-        require(_rate <= RATE_PERCISION,"rate too large");
+        require(_rate <= 1000, "rate too large");
         buyFeeRate = _rate;
     }
 
+    // max 10%
     function setSellFeeRate(uint _rate) external onlyOwner {
-        require(_rate <= RATE_PERCISION,"rate too large");
+        require(_rate <= 1000, "rate too large");
         sellFeeRate = _rate;
     }
 

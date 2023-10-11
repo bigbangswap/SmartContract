@@ -70,9 +70,9 @@ contract SwapFactory is Ownable, ISwapFactory {
         feeTo = _feeTo;
     }
 
-    // set swap fee
+    // set swap fee, max is 5%
     function setSwapFee(uint256 _swapFee) external onlyOwner {
-        require(_swapFee < FEE_DENOMINATOR, "SwapFactory: EXCEEDS_DENOMINATOR");
+        require(_swapFee < 500, "SwapFactory: EXCEEDS_DENOMINATOR");
         swapFee = _swapFee;
     }
 
