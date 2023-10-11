@@ -8,6 +8,7 @@ function sleep(ms) {
 let ROUTER_ADDRESS = '0xF8a3d1A716507498B49750F5E48a56510881825a'
 let PAIR_ADDRESS = '0xcDe678da96E6f20F348d5C3137fd7C2Ca12D6146'
 let STAKING_ADDRESS = '0xF457d0eC4ee4CF7135A4b44B86cC5476de144F67'
+let CARDSALE_ADDRESS = '0xDc9C56Dc376d01fB75cB9Cf8Dfb5FEbF8856a6a2'
 
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
@@ -28,6 +29,10 @@ async function main() {
   await sleep(10000)
   const res2 = await proxy.setWhiteList(PAIR_ADDRESS, STAKING_ADDRESS, true)
   console.log(res2)
+
+  await sleep(10000)
+  const res3 = await proxy.setWhiteList(PAIR_ADDRESS, CARDSALE_ADDRESS, true)
+  console.log(res3)
 }
 
 main().catch((error) => {
