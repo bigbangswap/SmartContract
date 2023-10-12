@@ -34,6 +34,7 @@ contract SwapERC20 is ISwapERC20 {
     }
 
     function _mint(address to, uint value) internal {
+	require(to != address(0), "invalid to");
         totalSupply = totalSupply.add(value);
         balanceOf[to] = balanceOf[to].add(value);
         emit Transfer(address(0), to, value);
@@ -57,16 +58,20 @@ contract SwapERC20 is ISwapERC20 {
     }
 
     function approve(address spender, uint value) external override returns (bool) {
+        require(spender != address(0), "invalid spender address");
         _approve(msg.sender, spender, value);
         return true;
     }
 
     function transfer(address to, uint value) external override returns (bool) {
+	require(to != address(0), "invalid to");
         _transfer(msg.sender, to, value);
         return true;
     }
 
     function transferFrom(address from, address to, uint value) external override returns (bool) {
+	require(from != address(0), "invalid to");
+	require(to != address(0), "invalid to");
         if (allowance[from][msg.sender] != type(uint256).max) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
         }
@@ -75,6 +80,8 @@ contract SwapERC20 is ISwapERC20 {
     }
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external override {
+	require(owner != address(0), "invalid owner address");
+	require(spender != address(0), "invalid owner address");
         require(deadline >= block.timestamp, 'Swap: EXPIRED');
         bytes32 domainSeparator = keccak256(
             abi.encode(
