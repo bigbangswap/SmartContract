@@ -2,10 +2,13 @@
 
 pragma solidity >= 0.8.4;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import './interfaces/IERC20Metadata.sol';
 import './libs/Address.sol';
 import './libs/Ownable.sol';
 import './libs/ChainId.sol';
+import "./libs/Counters.sol";
 
 interface ISwapFactory {
     function getPair(address token0,address token1) external view returns(address);
@@ -18,7 +21,9 @@ interface IStakingPool{
 contract BBG is Ownable, IERC20Metadata {
 
     using Address for address;
+    using Counters for Counters.Counter;
 
+    Counters.Counter private _nonces;
     string private constant _name = "BBG Token";
     string private constant _symbol = "BBG";
     uint256 private _totalSupply = 100_000_000 * 1e18;
@@ -104,24 +109,15 @@ contract BBG is Ownable, IERC20Metadata {
         return true;
     }
 
-    function permit(address owner, address spender, uint amount, uint deadline, uint8 v, bytes32 r, bytes32 s) external returns (bool){
-        require(block.timestamp <= deadline, "ERC20permit: expired");
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, nonces[owner]++, deadline));
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(_name)),
-                ChainId.get(),
-                address(this)
-            )
-        );
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
-        address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "ERC20permit: invalid signature");
-        require(signatory == owner, "ERC20permit: unauthorized");
+    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _nonces.current(), deadline));
+        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(structHash);
+        address signer = ECDSA.recover(digest, v, r, s);
+        require(signer == owner && signer != address(0), "Swap: Invalid signature");
+        require(block.timestamp <= deadline, "Swap: Signature expired");
 
+        _nonces.increment();
         _approve(owner, spender, amount);
-        return true;
     }
 
     function transferFrom(
@@ -225,7 +221,6 @@ contract BBG is Ownable, IERC20Metadata {
     function burn(uint amount) external returns (uint256){
         if (_totalSupply - amount < 1000_000e18) {
             uint256 burned = _totalSupply - 1000_000e18;
-            require(burned <= amount, "exceeds burn amount");
             _balances[msg.sender] -= burned;
             _totalSupply = 1000_000e18;
             emit Transfer(msg.sender, address(0), burned);

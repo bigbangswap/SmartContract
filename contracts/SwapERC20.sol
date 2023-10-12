@@ -3,13 +3,18 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import './interfaces/ISwapERC20.sol';
 import './libs/SafeMath.sol';
 import './libs/ChainId.sol';
+import "./libs/Counters.sol";
 
 contract SwapERC20 is ISwapERC20 {
     using SafeMath for uint;
+    using Counters for Counters.Counter;
 
+    Counters.Counter private _nonces;
     string public constant override name = 'BigBangSwap LP Token';
     string public constant override symbol = 'BigBangSwap LP Token';
     uint8 public constant override decimals = 18;
@@ -79,27 +84,15 @@ contract SwapERC20 is ISwapERC20 {
         return true;
     }
 
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external override {
-	require(owner != address(0), "invalid owner address");
-	require(spender != address(0), "invalid owner address");
-        require(deadline >= block.timestamp, 'Swap: EXPIRED');
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(name)),
-                ChainId.get(),
-                address(this)
-            )
-        );
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                '\x19\x01',
-                domainSeparator,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'Swap: INVALID_SIGNATURE');
-        _approve(owner, spender, value);
+    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _nonces.current(), deadline));
+        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(structHash);
+        address signer = ECDSA.recover(digest, v, r, s);
+        require(signer == owner && signer != address(0), "Swap: Invalid signature");
+        require(block.timestamp <= deadline, "Swap: Signature expired");
+
+        _nonces.increment();
+        _approve(owner, spender, amount);
     }
+
 }
