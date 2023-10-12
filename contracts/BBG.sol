@@ -4,7 +4,7 @@ pragma solidity >= 0.8.4;
 
 import './interfaces/IERC20Metadata.sol';
 import './libs/Address.sol';
-import './libs/CfoTakeableV2.sol';
+import './libs/Ownable.sol';
 import './libs/ChainId.sol';
 
 interface ISwapFactory {
@@ -15,7 +15,7 @@ interface IStakingPool{
     function exists(address account) external view returns(bool);
 }
 
-contract BBG is CfoTakeableV2, IERC20Metadata {
+contract BBG is Ownable, IERC20Metadata {
 
     using Address for address;
 
