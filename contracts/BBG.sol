@@ -209,7 +209,7 @@ contract BBG is Ownable, IERC20Metadata {
     ) internal {}
 
     function isSwapPair(address pair) public view returns(bool){
-        if(pair == address(0)){
+        if(pair == address(0) || pancakeSwapFactory == address(0)){
             return false;
         }
 

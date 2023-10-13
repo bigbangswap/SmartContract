@@ -10,6 +10,10 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import './interfaces/ISwapRouter.sol';
 
+interface IStakingFactory {
+    function startTime() external view returns (uint256);
+}
+
 contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -26,6 +30,7 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     address public usdt;
     address public bbg;
     address public router;
+    address public stakingFactory;
 
     uint256 public totalUsdt;
     uint256 public totalAccount;
@@ -35,6 +40,7 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     address public techWallet;
     address public opWallet;
     address public feeWallet;
+
 
     uint256[] public cardPriceTier;
     uint256[] public cardSales;
@@ -73,6 +79,7 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     }
 
     function BuyCard(uint256 cardType, address refer1, address refer2) external nonReentrant {
+	require(IStakingFactory(stakingFactory).startTime() >= block.timestamp, "mining started");
         require(cardType >= 0 && cardType < 6, "invalid card type");
         require(cardHolders[msg.sender].isUsed == false, "owns a card already");
         require(cardSupply[cardType] > 0, "insufficient inventory");
@@ -187,6 +194,11 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     function setRouterAddress(address addr) external onlyOwner {
         require(addr != address(0), "invalid address");
         router = addr;
+    }
+
+    function setStakingFactory(address factory) external onlyOwner {
+        require(factory != address(0), "invalid address");
+        stakingFactory = factory;
     }
 
     function rescueERC20(address token, address recipient, uint256 amount) external onlyOwner {

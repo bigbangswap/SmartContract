@@ -38,8 +38,8 @@ contract SwapERC20 is ISwapERC20 {
         );
     }
 
+    // LP token can be sent to address(0), for the minimal initial lp
     function _mint(address to, uint value) internal {
-	require(to != address(0), "invalid to");
         totalSupply = totalSupply.add(value);
         balanceOf[to] = balanceOf[to].add(value);
         emit Transfer(address(0), to, value);

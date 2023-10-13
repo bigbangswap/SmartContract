@@ -1,6 +1,10 @@
 require('@openzeppelin/hardhat-upgrades');
 const { ethers, upgrades, hardhatArguments } = require("hardhat");
 
+function sleep(ms) {
+  return new Promise(resolve => { setTimeout(resolve, ms) })
+}
+
 let operator = '0xBE2Fb2Dd89Af8e474053527cEEf00357b6D5310B'
 let factory = '0xe1555227DDc9CE209b67E55b60c1e8aE15Ad9eC0'
 let router = '0xF8a3d1A716507498B49750F5E48a56510881825a'
@@ -58,6 +62,13 @@ async function main() {
   console.table({
     "Staking Proxy address": await contract.getAddress()
   });
+
+  
+  await sleep(10000)
+  const cardsale = await ethers.getContractAt("contracts/CardSale.sol:CardSale", CARDSALE_ADDRESS);
+  const res = await cardsale.setStakingFactory(contract.getAddress())
+  console.log(res)
+
 }
 
 main().catch((error) => {
