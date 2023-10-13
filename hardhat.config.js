@@ -2,7 +2,7 @@ require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-etherscan');
 require('hardhat-contract-sizer');
 require('@openzeppelin/hardhat-upgrades');
-require("@nomicfoundation/hardhat-chai-matchers");
+//require("@nomicfoundation/hardhat-chai-matchers");
 
 const PRIVATE_KEY = process.env.PRIV_KEY 
 
@@ -19,7 +19,8 @@ module.exports = {
             enabled: true,
             runs: 100
           },
-          viaIR: true
+          viaIR: true,
+	  evmVersion: `paris`
         }
       }
     ]

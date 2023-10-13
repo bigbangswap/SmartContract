@@ -6,18 +6,22 @@ function sleep(ms) {
 }
 
 let operator = '0xBE2Fb2Dd89Af8e474053527cEEf00357b6D5310B'
-let factory = '0xe1555227DDc9CE209b67E55b60c1e8aE15Ad9eC0'
-let router = '0xF8a3d1A716507498B49750F5E48a56510881825a'
-let pair = '0xcDe678da96E6f20F348d5C3137fd7C2Ca12D6146'
-let usdt = '0x894040DCAb6F356B7e3FDC6914A8F765b95bbc6a'
-let bbg = '0xc2Cc561a41CC0ea4603FB58178377dC467597cA2'
+
+let factory = '0x7DDD8d914633c052DfD8c6d72071FDE14DA12536'
+let router = '0x973e0fFe16105446e615e6d4Ec96EA2b618fe0a6'
+let pair = '0x0056D1757525C64FBad8be74E253F862018ECDe7'
+let usdt = '0x5AD5a0C3bBdDAAAaB90580087B71F877596B7Ac5'
+let bbg = '0x9Ed43917BB4aE7598383368F93113aFAF7BB03AD'
 let wbnb = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd'
+
 let circulatingPool = '0xBE2Fb2Dd89Af8e474053527cEEf00357b6D5310B'
 let lpRewardPool = '0x1C23E94249DEFDb8c08a1529de0671Fc76eEff36'
 let techEcoFund = '0x1ea686Da1e65a70E721Dbaca4938bE68D4b0C06B'
 let marketingFund = '0x1C74ddc8B363dF722069148d054C0831b37acb73'
 let feeTo = '0xAeD1842817Fb15adE4235938BD07cE7d694415c1'
-let startTime = 1696833578
+let startTime = 1697208200 
+
+const CARDSALE_ADDRESS = '0x7CC2423477df8A266A47608D7e612D7d3586a417'
 
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
@@ -62,12 +66,6 @@ async function main() {
   console.table({
     "Staking Proxy address": await contract.getAddress()
   });
-
-  
-  await sleep(10000)
-  const cardsale = await ethers.getContractAt("contracts/CardSale.sol:CardSale", CARDSALE_ADDRESS);
-  const res = await cardsale.setStakingFactory(contract.getAddress())
-  console.log(res)
 
 }
 

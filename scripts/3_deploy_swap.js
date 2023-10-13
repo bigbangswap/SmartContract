@@ -18,14 +18,14 @@ async function main() {
   const factory = await ethers.deployContract("SwapFactory", [feeCollector]);
   await factory.waitForDeployment();
   const factoryAddress = await factory.getAddress()
-  console.log(`SwapFactory deployed to: ${factoryAddress}`);
+  console.table({"SwapFactory address": factoryAddress });
 
   await sleep(10000)
 
   const router = await ethers.deployContract("SwapRouter", [factoryAddress, wbnbAddress]);
   await router.waitForDeployment();
   const routerAddress = await router.getAddress()
-  console.log(`SwapRouter deployed to: ${routerAddress}`);
+  console.table({"SwapRouter address": routerAddress});
 
   await sleep(10000)
 

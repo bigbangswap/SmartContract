@@ -1,7 +1,7 @@
 require('@openzeppelin/hardhat-upgrades');
 const { ethers, upgrades, hardhatArguments } = require("hardhat");
 
-let BBG = '0xc2Cc561a41CC0ea4603FB58178377dC467597cA2'
+let BBG = '0x9Ed43917BB4aE7598383368F93113aFAF7BB03AD'
 
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
