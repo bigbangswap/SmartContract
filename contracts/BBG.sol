@@ -4,6 +4,7 @@ pragma solidity >= 0.8.4;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "@openzeppelin/contracts/utils/Nonces.sol";
 import './interfaces/IERC20Metadata.sol';
 import './libs/Address.sol';
 import './libs/Ownable.sol';
@@ -18,12 +19,10 @@ interface IStakingPool{
     function exists(address account) external view returns(bool);
 }
 
-contract BBG is Ownable, IERC20Metadata {
+contract BBG is Ownable, IERC20Metadata, Nonces {
 
     using Address for address;
-    using Counters for Counters.Counter;
 
-    Counters.Counter private _nonces;
     string private constant _name = "BBG Token";
     string private constant _symbol = "BBG";
     uint256 private _totalSupply = 100_000_000 * 1e18;
@@ -39,9 +38,6 @@ contract BBG is Ownable, IERC20Metadata {
 
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    /// @notice A record of states for signing / validating signatures
-    mapping (address => uint) public nonces;
-    
     mapping(address => bool) public isOtherSwapPair;
 
     uint256 public constant RATE_PERCISION = 10000;
@@ -110,13 +106,12 @@ contract BBG is Ownable, IERC20Metadata {
     }
 
     function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _nonces.current(), deadline));
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _useNonce(owner), deadline));
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(structHash);
         address signer = ECDSA.recover(digest, v, r, s);
         require(signer == owner && signer != address(0), "Swap: Invalid signature");
         require(block.timestamp <= deadline, "Swap: Signature expired");
 
-        _nonces.increment();
         _approve(owner, spender, amount);
     }
 
