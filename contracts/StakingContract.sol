@@ -263,7 +263,14 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         uint256 lpFundAmount = receivedAmount * 50 / 100; 
         _transferTo(stakingToken, marketingFund, marketingAmount);
         _transferTo(stakingToken, techEcoFund, techEcoAmount);
+	uint256 bbgBefore = IERC20Upgradeable(rewardToken).balanceOf(address(this));
         _addLiquidity(lpFundAmount);
+	uint256 bbgAfter = IERC20Upgradeable(rewardToken).balanceOf(address(this));
+        if ( bbgAfter > bbgBefore) {
+        	IERC20Upgradeable(rewardToken).safeTransfer(pair, bbgAfter - bbgBefore);
+        	ISwapRouter(router).takeToken(pair, rewardToken, 0); // update pair balance and reserve
+        }
+        
         stakedOf[msg.sender] = stakedOf[msg.sender] + receivedAmount;
 
         emit Staked(msg.sender, receivedAmount, block.timestamp);
@@ -283,7 +290,13 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
 
         // USDT
         uint256 receivedUsdtAmount = usdtAmount * 45/100;
+	uint256 bbgBefore = IERC20Upgradeable(rewardToken).balanceOf(address(this));
         _addLiquidity(usdtAmount - receivedUsdtAmount); // 55% fill back to pool
+	uint256 bbgAfter = IERC20Upgradeable(rewardToken).balanceOf(address(this));
+        if ( bbgAfter > bbgBefore) {
+        	IERC20Upgradeable(rewardToken).safeTransfer(pair, bbgAfter - bbgBefore);
+        	ISwapRouter(router).takeToken(pair, rewardToken, 0); // update pair balance and reserve
+        }
         _transferTo(stakingToken, msg.sender, receivedUsdtAmount);
 
         // BBG
@@ -333,7 +346,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     }
 
     function trigerDailyRelease(uint256 timestamp, uint256 amount) external onlyOperator returns (uint256) {
-        require(timestamp > startTime && timestamp <= block.timestamp && timestamp%86400 == 0, "invalid timestamp");
+        require(timestamp >= startTime && timestamp <= block.timestamp && timestamp%86400 == 0, "invalid timestamp");
         require(dayReleased[timestamp] == 0, "already released");
 
         ISwapRouter(router).takeToken(pair, rewardToken, amount);

@@ -38,7 +38,7 @@ if(network === 'bsc_main')
   techEcoFund = ''
   marketingFund = ''
   feeTo = ''
-  startTime = 1696833578
+  startTime = 
 } 
 
 async function main() {
