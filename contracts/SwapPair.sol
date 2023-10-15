@@ -2,34 +2,34 @@
 
 pragma solidity ^0.8.0;
 
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/ISwapFactory.sol';
 import './interfaces/ISwapRouter.sol';
 import './interfaces/ISwapPair.sol';
 import './interfaces/ISwapERC20.sol';
-import './interfaces/IERC20.sol';
 import './interfaces/IswapV2Callee.sol';
 import './libs/SafeMath.sol';
 import './libs/UQ112x112.sol';
 import './SwapERC20.sol';
 
-contract SwapPair is ISwapPair, SwapERC20 {
+contract SwapPair is SwapERC20 {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
-    uint public constant override MINIMUM_LIQUIDITY = 10 ** 3;
+    uint public constant MINIMUM_LIQUIDITY = 10 ** 3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
-    address public immutable override factory;
-    address public override token0;
-    address public override token1;
+    address public immutable factory;
+    address public  token0;
+    address public  token1;
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
     uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
 
-    uint public override price0CumulativeLast;
-    uint public override price1CumulativeLast;
-    uint public override kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
+    uint public  price0CumulativeLast;
+    uint public  price1CumulativeLast;
+    uint public  kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
 
     uint private unlocked = 1;
     modifier lock() {
@@ -39,9 +39,19 @@ contract SwapPair is ISwapPair, SwapERC20 {
         unlocked = 1;
     }
 
-    event Swaped(address txOrigin, uint amount0In, uint amount1In, uint amount0Out, uint amount1Out, uint blockTime);
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
 
-    function getReserves() public view override returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
+    function getReserves() public view  returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
         _reserve0 = reserve0;
         _reserve1 = reserve1;
         _blockTimestampLast = blockTimestampLast;
@@ -57,7 +67,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1) external override {
+    function initialize(address _token0, address _token1) external  {
         require(msg.sender == factory, 'Swap: FORBIDDEN');
         // sufficient check
         token0 = _token0;
@@ -92,6 +102,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
                 uint rootK = SafeMath.sqrt(uint(_reserve0).mul(_reserve1));
                 uint rootKLast = SafeMath.sqrt(_kLast);
                 if (rootK > rootKLast) {
+		    uint totalSupply = totalSupply();			
                     uint protocolFee = ISwapFactory(factory).protocolFee();
                     uint numerator = totalSupply.mul(rootK.sub(rootKLast)).mul(protocolFee);
                     uint denominator = rootK.mul(10000 - protocolFee).add(rootKLast.mul(protocolFee));
@@ -106,7 +117,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function mint(address to) external override lock returns (uint liquidity) {
+    function mint(address to) external  lock returns (uint liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         // gas savings
         uint balance0 = IERC20(token0).balanceOf(address(this));
@@ -115,7 +126,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
         uint amount1 = balance1.sub(_reserve1);
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint _totalSupply = totalSupply;
+        uint _totalSupply = totalSupply();
         // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
             liquidity = SafeMath.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
@@ -134,7 +145,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function burn(address to) external override lock returns (uint amount0, uint amount1) {
+    function burn(address to) external  lock returns (uint amount0, uint amount1) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
         // gas savings
         address _token0 = token0;
@@ -143,10 +154,10 @@ contract SwapPair is ISwapPair, SwapERC20 {
         // gas savings
         uint balance0 = IERC20(_token0).balanceOf(address(this));
         uint balance1 = IERC20(_token1).balanceOf(address(this));
-        uint liquidity = balanceOf[address(this)];
+        uint liquidity = balanceOf(address(this));
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint _totalSupply = totalSupply;
+        uint _totalSupply = totalSupply();
         // gas savings, must be defined here since totalSupply can update in _mintFee
         amount0 = liquidity.mul(balance0) / _totalSupply;
         // using balances ensures pro-rata distribution
@@ -166,7 +177,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external override lock {
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external  lock {
         require(msg.sender == ISwapFactory(factory).router(), "invalid caller");
         require(amount0Out > 0 || amount1Out > 0, 'Swap: INSUFFICIENT_OUTPUT_AMOUNT');
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
@@ -198,10 +209,9 @@ contract SwapPair is ISwapPair, SwapERC20 {
 
         _update(balance0, balance1, _reserve0, _reserve1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
-        emit Swaped(tx.origin, amount0In, amount1In, amount0Out, amount1Out,block.timestamp);
     }
 
-    function takeToken(address token, uint amount) external override lock {
+    function takeToken(address token, uint amount) external  lock {
         address router = ISwapFactory(factory).router();
         require(msg.sender == router, "invalid caller");
         _safeTransfer(token, ISwapRouter(router).stakingFactory(), amount);
@@ -210,7 +220,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // force balances to match reserves
-    function skim(address to) external override lock {
+    function skim(address to) external  lock {
         address _token0 = token0;
         // gas savings
         address _token1 = token1;
@@ -220,7 +230,7 @@ contract SwapPair is ISwapPair, SwapERC20 {
     }
 
     // force reserves to match balances
-    function sync() external override lock {
+    function sync() external  lock {
         _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
     }
 

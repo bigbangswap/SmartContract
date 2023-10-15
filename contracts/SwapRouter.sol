@@ -3,11 +3,11 @@
 pragma solidity >= 0.8.4;
 
 import './interfaces/IWETH.sol';
-import './interfaces/IERC20.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/ISwapFactory.sol';
 import './interfaces/ISwapPair.sol';
 import './libs/SafeMath.sol';
-import './libs/Ownable.sol';
 import './libs/TransferHelper.sol';
 
 contract SwapRouter is Ownable {
@@ -19,7 +19,6 @@ contract SwapRouter is Ownable {
     address public stakingFactory;
 
 
-    mapping(address => address) public creatorOf;
     mapping(address => address) public baseTokenOf;
     mapping(address => mapping(address => bool)) public isWhiteList;
 
@@ -37,12 +36,6 @@ contract SwapRouter is Ownable {
         _;
     }
 
-    modifier onlyCreator(address pair){
-        require(pair != address(0), "pair can not be address 0");
-        require(msg.sender == creatorOf[pair] || msg.sender == owner(), "caller must be creator");
-        _;
-    }
-
     event NewPairCreated(address caller, address pair, uint blockTime);
     event SellLpFeeAdded(address caller, address pair, uint addedLpBaseTokenAmount, uint blockTime);
     event WhiteListChanged(address pair, address user, bool status);
@@ -55,7 +48,7 @@ contract SwapRouter is Ownable {
         uint amountB;
     }
 
-    constructor(address _factory, address _WETH) {
+    constructor(address _factory, address _WETH) Ownable(msg.sender) {
         factory = _factory;
         WETH = _WETH;
     }
@@ -77,7 +70,6 @@ contract SwapRouter is Ownable {
         TransferHelper.safeTransferFrom(paras.tokenB, msg.sender, pair, paras.amountB);
         ISwapPair(pair).mint(msg.sender);
 
-        creatorOf[pair] = msg.sender;
         baseTokenOf[pair] = paras.baseToken;
 
         isWhiteList[pair][msg.sender] = true;
@@ -293,12 +285,9 @@ contract SwapRouter is Ownable {
         TransferHelper.safeTransferETH(to, amountOut);
     }
 
-    function setPairCreator(address pair, address newCreator) external onlyCreator(pair) {
-        creatorOf[pair] = newCreator;
-    }
 
     function setWhiteList(address pair, address account, bool status) external {
-        require(msg.sender == stakingFactory || msg.sender == creatorOf[pair] || msg.sender == owner(), "caller must be creator");
+        require(msg.sender == stakingFactory || msg.sender == owner(), "caller must be creator");
         isWhiteList[pair][account] = status;
         
         emit WhiteListChanged(pair,account,status);

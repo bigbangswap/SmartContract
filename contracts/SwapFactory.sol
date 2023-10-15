@@ -3,8 +3,8 @@
 
 pragma solidity >= 0.8.4;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import './interfaces/ISwapFactory.sol';
-import './libs/Ownable.sol';
 import './SwapPair.sol';
 
 contract SwapFactory is Ownable, ISwapFactory {
@@ -26,7 +26,7 @@ contract SwapFactory is Ownable, ISwapFactory {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint _allPairsLength);
 
-    constructor(address feeCollector) {
+    constructor(address feeCollector) Ownable(msg.sender) {
 
         require(feeCollector != address(0), "invalid feeCollector");
 

@@ -9,8 +9,6 @@ interface ISwapRouter {
 
     function WETH() external view returns(address);
 
-    function creatorOf(address pair) external view returns(address);
-
     function baseTokenOf(address pair) external view returns(address);
 
     function isWhiteList(address pair,address account) external view returns(bool);

@@ -14,16 +14,14 @@ contract BBG is Ownable, ERC20Permit {
 
     using Address for address;
 
-    uint256 private _totalSupply = 100_000_000 * 1e18;
-    mapping(address => uint256) private _balances;
-    mapping(address => mapping(address => uint256)) private _allowances;
-    mapping(address => bool) public isOtherSwapPair;
-
-    uint256 public constant RATE_PERCISION = 10000;
+    uint256 private constant TOTAL_SUPPLY = 100_000_000 * 1e18;
+    uint256 public constant RATE_PERCISION = 10_000;
     uint256 public buyFeeRate = 300;
     uint256 public sellFeeRate = 600;
-    address public feeTo;
 
+    mapping(address => bool) public isOtherSwapPair;
+
+    address public feeTo;
     address public usdt;
     address public wbnb;
     address public pancakeSwapFactory;
@@ -43,33 +41,12 @@ contract BBG is Ownable, ERC20Permit {
         }
         feeTo = address(_feeAddress);
 
-        _balances[msg.sender] = _totalSupply;
-        emit Transfer(address(0), msg.sender, _totalSupply);
-    }
-
-    function decimals() public pure override returns (uint8) {
-        return 18;
-    }
-
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) public view override returns (uint256) {
-        return _balances[account];
+	_mint(msg.sender, TOTAL_SUPPLY);
+        emit Transfer(address(0), msg.sender, TOTAL_SUPPLY);
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         __transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    function allowance(address owner, address spender) public view override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    function approve(address spender, uint256 amount) public override returns (bool) {
-        _approve(_msgSender(), spender, amount, true);
         return true;
     }
 
@@ -80,24 +57,24 @@ contract BBG is Ownable, ERC20Permit {
     ) public override returns (bool) {
         __transfer(sender, recipient, amount);
 
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        uint256 currentAllowance = allowance(sender, _msgSender());
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
 
-        _allowances[sender][_msgSender()] -= amount;
+	_spendAllowance(sender, _msgSender(), amount);
 
         return true;
     }
 
     function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue, true);
+        _approve(_msgSender(), spender, allowance(_msgSender(), spender) + addedValue, true);
         return true;
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
+        uint256 currentAllowance = allowance(_msgSender(), spender);
         require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         unchecked {
-            _approve(_msgSender(), spender, currentAllowance - subtractedValue);
+            _approve(_msgSender(), spender, currentAllowance - subtractedValue, true);
         }
         return true;
     }
@@ -107,11 +84,8 @@ contract BBG is Ownable, ERC20Permit {
         address recipient,
         uint256 amount
     ) internal {
-        require(sender != address(0), "ERC20: transfer from the zero address");
 
         _beforeTokenTransfer(sender, recipient, amount);
-
-        require(_balances[sender] >= amount, "ERC20: transfer amount exceeds balance");
 
         uint recipientAmount = amount;
         bool isBuy = isSwapPair(sender);
@@ -123,17 +97,14 @@ contract BBG is Ownable, ERC20Permit {
             _takeFee(sender, feeTo, feeAmount);
         }
         
-        _balances[sender] = _balances[sender] - amount;
-        _balances[recipient] = _balances[recipient] + recipientAmount;
-        emit Transfer(sender, recipient, recipientAmount);
+	_transfer(sender, recipient, recipientAmount);
 
         _afterTokenTransfer(sender, recipient, amount);
     }
 
     function _takeFee(address _from, address _to, uint _fee) internal {
         if(_fee > 0){
-            _balances[_to] = _balances[_to] + _fee;
-            emit Transfer(_from, _to, _fee);
+	    _transfer(_from, _to, _fee);
         }
     }
 
@@ -160,21 +131,8 @@ contract BBG is Ownable, ERC20Permit {
     }
 
     function burn(uint amount) external returns (uint256){
-
-	require(amount <= _totalSupply - 1e18, "invalid amount");
-
-        if (_totalSupply - amount < 1e18) {
-            uint256 burned = _totalSupply - 1e18;
-            _balances[msg.sender] -= burned;
-            _totalSupply = 1e18;
-            emit Transfer(msg.sender, address(0), burned);
-            return burned;
-        } else {
-            _balances[msg.sender] -= amount;
-            _totalSupply -= amount;
-            emit Transfer(msg.sender, address(0), amount);
-            return amount;
-        }
+	_burn(_msgSender(), amount);
+	return amount;
     }
 
     function addOtherSwapPair(address _swapPair) external onlyOwner {
@@ -203,5 +161,4 @@ contract BBG is Ownable, ERC20Permit {
 	require(_feeTo != address(0), "invalid address");
         feeTo = _feeTo;
     }
-
 }
