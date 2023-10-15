@@ -65,6 +65,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     event RewardPaid(address user, address token,uint256 reward, uint256 timestamp);
     event RewardSynced(uint256 batchNo, address token, uint256 timestamp);
     event DailyReleaseTrigerred(uint256 amount, uint256 timestamp);
+    event CirculatingPoolReleased(uint256 amount, uint256 timestamp);
 
     modifier onlyCreator() {
         require(msg.sender == creator, "caller must be creator");
@@ -209,7 +210,8 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         return 0;
     }
 
-    function isStopped() external view returns (bool) {
+    // flag of releasing from swap pool or circulating pool
+    function isStopped() public view returns (bool) {
         return IERC20Upgradeable(rewardToken).totalSupply() <= 1_000_000e18;
     }
 
@@ -282,7 +284,6 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         require(exists(msg.sender), "no stake record");
 
         _transferFrom(msg.sender, rewardToken, amount); 
-        require(IERC20Upgradeable(rewardToken).totalSupply() - amount >= 1_000_000e18, "break the limit of 1 million");
         uint256 burned = IRewardToken(rewardToken).burn(amount);
 
         uint256 liquidity = burned * IERC20Upgradeable(pair).totalSupply() / IERC20Upgradeable(rewardToken).balanceOf(pair); 
@@ -349,7 +350,12 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         require(timestamp >= startTime && timestamp <= block.timestamp && timestamp%86400 == 0, "invalid timestamp");
         require(dayReleased[timestamp] == 0, "already released");
 
-        ISwapRouter(router).takeToken(pair, rewardToken, amount);
+	if(isStopped() == false) {
+        	ISwapRouter(router).takeToken(pair, rewardToken, amount);
+	} else {
+		// released from circulatingPool 
+		emit CirculatingPoolReleased(amount, timestamp);
+        }
         totalReleased += amount;
         dayReleased[timestamp] = amount; 
         dayReleasedInfo[timestamp] = ReleaseInfo(amount*55/100, amount*30/100, amount*3/100, amount*3/100, amount*3/100, amount*2/100, amount*2/100, amount*2/100);
