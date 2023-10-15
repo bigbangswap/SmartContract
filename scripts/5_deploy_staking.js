@@ -5,7 +5,7 @@ function sleep(ms) {
   return new Promise(resolve => { setTimeout(resolve, ms) })
 }
 
-let operator = '0xBE2Fb2Dd89Af8e474053527cEEf00357b6D5310B'
+let operator = '0x49A265d2f35d4cA65C532D6e679E641aba1E785e'
 
 let factory = '0x7DDD8d914633c052DfD8c6d72071FDE14DA12536'
 let router = '0x973e0fFe16105446e615e6d4Ec96EA2b618fe0a6'
@@ -26,7 +26,7 @@ const CARDSALE_ADDRESS = '0x7CC2423477df8A266A47608D7e612D7d3586a417'
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
 {
-  operator = ''
+  operator = '0x49A265d2f35d4cA65C532D6e679E641aba1E785e'
   factory = ''
   router = ''
   pair = ''

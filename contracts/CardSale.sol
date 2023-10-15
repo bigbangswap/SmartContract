@@ -80,7 +80,7 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     }
 
     function BuyCard(uint256 cardType, address refer1, address refer2) external nonReentrant {
-	require(IStakingFactory(stakingFactory).startTime() >= block.timestamp, "mining started");
+	require(IStakingFactory(stakingFactory).startTime() >= block.timestamp || cardType == 5, "mining started");
         require(cardType >= 0 && cardType < 6, "invalid card type");
         require(cardHolders[msg.sender].isUsed == false, "owns a card already");
         require(cardSupply[cardType] > 0, "insufficient inventory");

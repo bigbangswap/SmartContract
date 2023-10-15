@@ -8,7 +8,7 @@ function sleep(ms) {
 let ROUTER_ADDRESS = '0x973e0fFe16105446e615e6d4Ec96EA2b618fe0a6'
 let PAIR_ADDRESS = '0x0056D1757525C64FBad8be74E253F862018ECDe7'
 let STAKING_ADDRESS = '0x19E2c03A49F18e63D95c3A3D100d81138FAa228f'
-let CARDSALE_ADDRESS = '0x7CC2423477df8A266A47608D7e612D7d3586a417'
+let CARDSALE_ADDRESS = '0x451D9Ea87A4986182A068104620d320Db83f3Ef8'
 
 const network = hardhatArguments.network;
 if(network === 'bsc_main')
@@ -23,7 +23,7 @@ console.log(`Router address: ${ROUTER_ADDRESS}`);
 
 async function main() {
   const router = await ethers.getContractAt("contracts/SwapRouter.sol:SwapRouter", ROUTER_ADDRESS);
-  
+
   let res = await router.setStakingFactory(STAKING_ADDRESS)
   console.log(`set staking factory in router: ${res.hash}`)
 
