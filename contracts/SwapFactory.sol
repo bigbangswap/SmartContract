@@ -5,6 +5,7 @@ pragma solidity >= 0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import './interfaces/ISwapFactory.sol';
+import './interfaces/ISwapPair.sol';
 import './SwapPair.sol';
 
 contract SwapFactory is Ownable, ISwapFactory {

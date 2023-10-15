@@ -5,8 +5,6 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './interfaces/ISwapFactory.sol';
 import './interfaces/ISwapRouter.sol';
-import './interfaces/ISwapPair.sol';
-import './interfaces/ISwapERC20.sol';
 import './interfaces/IswapV2Callee.sol';
 import './libs/SafeMath.sol';
 import './libs/UQ112x112.sol';

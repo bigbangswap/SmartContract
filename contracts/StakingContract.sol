@@ -370,14 +370,6 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         isRewardOperator[account] = status;
     }
 
-    function takeToken(address token, address to, uint amount) external onlyCreator {
-        if(token == address(0)){
-            _safeTransferETH(to, amount);
-        }else{
-            IERC20Upgradeable(token).safeTransfer(to, amount);
-        }
-    }
-
     function processRewards(address token, address recipient, uint256 amount) external onlyOperator returns (bool) {
         require(token != address(0) && recipient != address(0), "invalid token or recipient");
         require(amount > 0, "invalid amount");
