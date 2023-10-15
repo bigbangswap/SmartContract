@@ -2,42 +2,21 @@
 
 pragma solidity >= 0.8.4;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import "@openzeppelin/contracts/utils/Nonces.sol";
-import './interfaces/IERC20Metadata.sol';
-import './libs/Address.sol';
-import './libs/Ownable.sol';
-import './libs/ChainId.sol';
-import "./libs/Counters.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import '@openzeppelin/contracts/utils/Address.sol';
 
 interface ISwapFactory {
     function getPair(address token0,address token1) external view returns(address);
 }
 
-interface IStakingPool{
-    function exists(address account) external view returns(bool);
-}
-
-contract BBG is Ownable, IERC20Metadata, Nonces {
+contract BBG is Ownable, ERC20Permit {
 
     using Address for address;
 
-    string private constant _name = "BBG Token";
-    string private constant _symbol = "BBG";
     uint256 private _totalSupply = 100_000_000 * 1e18;
-
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
-
-    /// @notice The EIP-712 typehash for the contract's domain
-    bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
-
-    /// @notice The EIP-712 typehash for the permit struct used by the contract
-    bytes32 public constant PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-
-    bytes32 public immutable DOMAIN_SEPARATOR;
-
     mapping(address => bool) public isOtherSwapPair;
 
     uint256 public constant RATE_PERCISION = 10000;
@@ -49,8 +28,8 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
     address public wbnb;
     address public pancakeSwapFactory;
 
-    constructor( address _feeAddress ){
-        uint256 chainId = ChainId.get();
+    constructor( address _feeAddress ) Ownable(msg.sender) ERC20("BBG Token", "BBG") ERC20Permit("BBG Token"){
+        uint256 chainId = block.chainid;
         if ( chainId == 56 ) {
             // mainnet
             usdt = address(0x55d398326f99059fF775485246999027B3197955);
@@ -64,19 +43,8 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
         }
         feeTo = address(_feeAddress);
 
-        DOMAIN_SEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(_name)), chainId, address(this)));
-
-        address holder = msg.sender;
-        _balances[holder] = _totalSupply;
-        emit Transfer(address(0), holder, _totalSupply);
-    }
-
-    function name() public pure override returns (string memory) {
-        return _name;
-    }
-
-    function symbol() public pure override returns (string memory) {
-        return _symbol;
+        _balances[msg.sender] = _totalSupply;
+        emit Transfer(address(0), msg.sender, _totalSupply);
     }
 
     function decimals() public pure override returns (uint8) {
@@ -92,7 +60,7 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+        __transfer(_msgSender(), recipient, amount);
         return true;
     }
 
@@ -101,18 +69,8 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
     }
 
     function approve(address spender, uint256 amount) public override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+        _approve(_msgSender(), spender, amount, true);
         return true;
-    }
-
-    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, amount, _useNonce(owner), deadline));
-        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(structHash);
-        address signer = ECDSA.recover(digest, v, r, s);
-        require(signer == owner && signer != address(0), "Swap: Invalid signature");
-        require(block.timestamp <= deadline, "Swap: Signature expired");
-
-        _approve(owner, spender, amount);
     }
 
     function transferFrom(
@@ -120,7 +78,7 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
         address recipient,
         uint256 amount
     ) public override returns (bool) {
-        _transfer(sender, recipient, amount);
+        __transfer(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
@@ -131,7 +89,7 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
     }
 
     function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue, true);
         return true;
     }
 
@@ -144,7 +102,7 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
         return true;
     }
 
-    function _transfer(
+    function __transfer(
         address sender,
         address recipient,
         uint256 amount
@@ -179,18 +137,6 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
         }
     }
 
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -214,10 +160,13 @@ contract BBG is Ownable, IERC20Metadata, Nonces {
     }
 
     function burn(uint amount) external returns (uint256){
-        if (_totalSupply - amount < 1000_000e18) {
-            uint256 burned = _totalSupply - 1000_000e18;
+
+	require(amount <= _totalSupply - 1e18, "invalid amount");
+
+        if (_totalSupply - amount < 1e18) {
+            uint256 burned = _totalSupply - 1e18;
             _balances[msg.sender] -= burned;
-            _totalSupply = 1000_000e18;
+            _totalSupply = 1e18;
             emit Transfer(msg.sender, address(0), burned);
             return burned;
         } else {
