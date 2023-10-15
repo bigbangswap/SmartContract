@@ -30,7 +30,6 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     address public usdt;
     address public bbg;
     address public router;
-    address public stakingFactory;
 
     uint256 public totalUsdt;
     uint256 public totalAccount;
@@ -46,6 +45,8 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     uint256[] public cardSales;
     uint256[] public cardSupply;
     mapping (address => CardRecord) cardHolders;
+
+    address public stakingFactory;
     
     event BuyCardEvent(address buyer, uint256 cardType, address refer1, address refer2, uint256 timestamp);
     event AddLiquidityEvent(address caller, uint256 cardType, uint256 timestamp);
@@ -199,12 +200,5 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     function setStakingFactory(address factory) external onlyOwner {
         require(factory != address(0), "invalid address");
         stakingFactory = factory;
-    }
-
-    function rescueERC20(address token, address recipient, uint256 amount) external onlyOwner {
-        require(recipient!= address(0), "invalid address");
-        require(amount > 0 && IERC20Upgradeable(token).balanceOf(address(this)) >= amount, "invalid amount");
-
-        IERC20Upgradeable(token).safeTransfer(recipient, amount);
     }
 }
