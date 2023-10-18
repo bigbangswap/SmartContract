@@ -165,6 +165,7 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
     }
 
     // ---- operator functions  ----
+    // 55% 
     function burnBBGHourly(uint256 ts, uint256 amount) external onlyOperator nonReentrant {
 	require(ts%3600 == 0 && ts < block.timestamp, "invalid timestamp");
 	require(burnRecord[ts] == 0, "already burned");
@@ -177,6 +178,7 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
 	emit HourlyBurned(amount, ts);
     }
 
+    // 45% LP
     function rewardBBGDaily(uint256 batchNo, uint256 ts, address[] calldata accounts, uint256[] calldata values) external onlyOperator nonReentrant {
 	require(ts%86400== 0 && ts < block.timestamp, "invalid timestamp");
 	require(accounts.length == values.length && accounts.length > 0, "accounts and values mismatch");

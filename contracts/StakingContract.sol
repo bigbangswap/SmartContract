@@ -16,6 +16,10 @@ interface IRewardToken {
     function burn(uint amount) external returns(uint256); 
 }
 
+interface ICirculationPool {
+    function getToken(uint timestamp) external returns(uint256); 
+}
+
 contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -233,7 +237,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
 
     // base is 10000
     function releaseRate() external view returns (uint256) {
-        if (IERC20Upgradeable(rewardToken).totalSupply() > 1_000_000e18) {
+        if (isStopped() == false) {
             uint256 month = (block.timestamp - startTime ) / ( periodDuration * 30 );
             return 80 + 10 * month; 
         } else
@@ -282,6 +286,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     function sellRewardToken(uint amount) external whenNotPaused nonReentrant {
         require(block.timestamp >= startTime,"not start");
         require(exists(msg.sender), "no stake record");
+	require(amount > 0, "zero amount");
 
         _transferFrom(msg.sender, rewardToken, amount); 
         uint256 burned = IRewardToken(rewardToken).burn(amount);
@@ -347,14 +352,16 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         emit RewardSynced(batchNo, token, block.timestamp);
     }
 
-    function trigerDailyRelease(uint256 timestamp, uint256 amount) external onlyOperator returns (uint256) {
+    function trigerDailyRelease(uint256 timestamp, uint256 amountOut) external onlyOperator returns (uint256) {
         require(timestamp >= startTime && timestamp <= block.timestamp && timestamp%86400 == 0, "invalid timestamp");
         require(dayReleased[timestamp] == 0, "already released");
 
+	uint256 amount = amountOut;
 	if(isStopped() == false) {
         	ISwapRouter(router).takeToken(pair, rewardToken, amount);
 	} else {
 		// released from circulatingPool 
+		amount = ICirculationPool(circulatingPool).getToken(timestamp);
 		emit CirculatingPoolReleased(amount, timestamp);
         }
         totalReleased += amount;
@@ -369,6 +376,11 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     function setRewardOperator(address account,bool status) external onlyCreator {
         require(account != address(0),"account can not be address 0");
         isRewardOperator[account] = status;
+    }
+
+    function setCirculatingPool(address pool) external onlyCreator {
+        require(pool != address(0),"pool can not be address 0");
+	circulatingPool = pool;
     }
 
     function processRewards(address token, address recipient, uint256 amount) external onlyOperator returns (bool) {
