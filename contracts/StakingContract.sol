@@ -298,14 +298,15 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         	IERC20Upgradeable(rewardToken).safeTransfer(pair, bbgAfter - bbgBefore);
         	ISwapRouter(router).takeToken(pair, rewardToken, 0); // update pair balance and reserve
         }
-        _transferTo(stakingToken, msg.sender, receivedUsdtAmount);
+        _transferTo(stakingToken, msg.sender, receivedUsdtAmount * 95 / 100);
+        _transferTo(stakingToken, feeCollector, receivedUsdtAmount * 5 / 100);
 
         // BBG
         IRewardToken(rewardToken).burn(bbgAmount * 55 / 100);
         _transferTo(rewardToken, circulatingPool, bbgAmount * 35 / 100);
         _transferTo(rewardToken, lpRewardPool, bbgAmount * 10 / 100);
 
-        emit RewardSold(msg.sender, burned, receivedUsdtAmount, usdtAmount - receivedUsdtAmount, block.timestamp);
+        emit RewardSold(msg.sender, burned, receivedUsdtAmount * 95 / 100, usdtAmount - receivedUsdtAmount, block.timestamp);
     }
 
     function claimRewards(address token) external whenNotPaused nonReentrant {
@@ -327,7 +328,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
             }
         }
         require(amount > 0, "reward amount is zero");
-        emit RewardPaid(msg.sender, token, amount, block.timestamp);
+        emit RewardPaid(msg.sender, token, amount * 95 / 100, block.timestamp);
     }
 
     function notifyRewards(uint256 batchNo, address token, address[] calldata accounts, uint256[] calldata values) external onlyOperator nonReentrant {
