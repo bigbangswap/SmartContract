@@ -34,6 +34,7 @@ contract CirculationPool is Initializable, OwnableUpgradeable, ReentrancyGuardUp
         __ReentrancyGuard_init();
 
         bbgToken = bbgAddress;
+	rate = 80;
     }
 
     // released bbg token 

@@ -30,8 +30,6 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     uint256 public totalReleased;   // BBG total released 
     uint256 public startTime;
 
-    address public creator;
-    address public operator;
     address public techEcoFund;     //10%
     address public marketingFund;   //10%
     address public circulatingPool; 
@@ -71,13 +69,8 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     event DailyReleaseTrigerred(uint256 amount, uint256 timestamp);
     event CirculatingPoolReleased(uint256 amount, uint256 timestamp);
 
-    modifier onlyCreator() {
-        require(msg.sender == creator, "caller must be creator");
-        _;
-    }
-
     modifier onlyOperator() {
-        require(msg.sender == creator || msg.sender == operator || isRewardOperator[msg.sender] == true, "caller must be operator or creator");
+        require(isRewardOperator[msg.sender] == true, "caller must be operator");
         _;
     }
 
@@ -99,11 +92,9 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         __Ownable_init();
         __ReentrancyGuard_init();
 
-        creator = msg.sender;
 	RATE_PERCISION = 10000;
         periodDuration = 86400;
         startTime = _startTime;
-        operator = operatorAddress;
         factory = factoryAddress;
         router = routerAddress;
         pair = pairAddress;
@@ -116,7 +107,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         marketingFund = _marketingFund;
         feeCollector = _feeTo;
 
-	isRewardOperator[operator] = true;
+	isRewardOperator[operatorAddress] = true;
 
         IERC20Upgradeable(stakingToken).approve(router, type(uint256).max); 
         IERC20Upgradeable(rewardToken).approve(router, type(uint256).max);
@@ -169,7 +160,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     function infos() external view returns(
         address _factory,
         address _router,
-        address _creator,
+        address _owner,
         address _pair,
         address _stakingToken,
         address _rewardToken,
@@ -178,7 +169,7 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     ){
         _factory = factory;
         _router = router;
-        _creator = creator;
+        _owner = owner();
         _pair = pair;
         _stakingToken = stakingToken;
         _rewardToken = rewardToken;
@@ -373,12 +364,12 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
 
     // admin functions
     
-    function setRewardOperator(address account,bool status) external onlyCreator {
+    function setRewardOperator(address account,bool status) external onlyOwner {
         require(account != address(0),"account can not be address 0");
         isRewardOperator[account] = status;
     }
 
-    function setCirculatingPool(address pool) external onlyCreator {
+    function setCirculatingPool(address pool) external onlyOwner {
         require(pool != address(0),"pool can not be address 0");
 	circulatingPool = pool;
     }
@@ -396,16 +387,11 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
         return burned;
     }
 
-    function setPauseStatus(bool _paused) external onlyCreator {
+    function setPauseStatus(bool _paused) external onlyOwner {
         if(_paused){
             _pause();
         }else{
             _unpause();
         }
-    }
-
-    function transferCreator(address newCreator) external onlyCreator {
-        require(newCreator != address(0), "new creator can not be address 0");
-        creator = newCreator;
     }
 }
