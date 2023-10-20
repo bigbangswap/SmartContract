@@ -35,16 +35,17 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     uint256 public totalAccount;
     uint256 public totalCardSales;
 
-    address public rewardWallet;
-    address public techWallet;
-    address public opWallet;
-    address public feeWallet;
 
 
     uint256[] public cardPriceTier;
     uint256[] public cardSales;
     uint256[] public cardSupply;
     mapping (address => CardRecord) cardHolders;
+
+    address public rewardWallet;
+    address public techWallet;
+    address public opWallet;
+    address public feeWallet;
 
     address public stakingFactory;
     
@@ -80,7 +81,7 @@ contract CardSale is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeab
     }
 
     function BuyCard(uint256 cardType, address refer1, address refer2) external nonReentrant {
-	require(IStakingFactory(stakingFactory).startTime() >= block.timestamp || cardType == 5, "mining started");
+	require(IStakingFactory(stakingFactory).startTime() >= block.timestamp || cardType == 5, "mining started or wrong type");
         require(cardType >= 0 && cardType < 6, "invalid card type");
         require(cardHolders[msg.sender].isUsed == false, "owns a card already");
         require(cardSupply[cardType] > 0, "insufficient inventory");
