@@ -276,7 +276,6 @@ contract StakingContract is Initializable, OwnableUpgradeable, PausableUpgradeab
     // sell BBG
     function sellRewardToken(uint amount) external whenNotPaused nonReentrant {
         require(block.timestamp >= startTime,"not start");
-        require(exists(msg.sender), "no stake record");
 	require(amount > 0, "zero amount");
 
         _transferFrom(msg.sender, rewardToken, amount); 

@@ -38,13 +38,16 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
     mapping(uint256 => uint256) public burnRecord;   			// hourly
     mapping(uint256 => uint256) public bbgBalanceHourly;		// hourly 
     mapping(uint256 => uint256) public bbgClaimedHourly;  		// hourly 
-    mapping(address => mapping(uint256 => uint256)) public rewardRecord;// daily 
+    mapping(address => mapping(uint256 => uint256)) public rewardRecord;// hourly
+
+    uint256 public totalReward;
+    uint256 public totalBurned;
    
-    event Staked( address user, uint256 amount, uint256 timestamp);
+    event Staked(address user, uint256 amount, uint256 timestamp);
     event Unstaked(address user, uint256 amount, uint256 leftAmount);
-    event Claimed( address user, uint256 amount, uint256 timestamp);
-    event DailyRewarded(uint256 batchNo, uint256 amount, uint256 timestamp);
-    event HourlyBurned(uint256 amount, uint256 timestamp);
+    event Claimed(address user, uint256 amount, uint256 timestamp);
+    event HourlyRewarded(uint256 batchNo, uint256 amount, uint256 timestamp); 
+    event HourlyBurned(uint256 hourly_ts, uint256 amount, uint256 timestamp);
 
     function initialize (
         address bbgAddress,
@@ -73,7 +76,7 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     // get total bbg reward (claimed included) 
     function rewarded(address user) external view returns (uint256) {
-	UserInfo memory info = userInfo[user];
+	    UserInfo memory info = userInfo[user];
         if (info.isUsed)
             return info.totalReward;
         return 0;
@@ -81,7 +84,7 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     // get total bbg reward claimed  
     function claimed(address user) external view returns (uint256) {
-	UserInfo memory info = userInfo[user];
+	    UserInfo memory info = userInfo[user];
         if (info.isUsed)
             return info.totalClaimed;
         return 0;
@@ -89,7 +92,7 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     // get available bbg reward (now) 
     function availableReward(address user) external view returns (uint256) {
-	UserInfo memory info = userInfo[user];
+	    UserInfo memory info = userInfo[user];
         if (info.isUsed)
             return info.totalReward - info.totalClaimed;
         return 0;
@@ -106,22 +109,22 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
         {
         	UserInfo memory newInfo = UserInfo(
             		oldInfo.totalStaked + amount,
-			oldInfo.totalReward,
-			oldInfo.totalClaimed,
+			        oldInfo.totalReward,
+			        oldInfo.totalClaimed,
             		block.timestamp,
             		true
         	);
         	userInfo[msg.sender] = newInfo;
         } else {
         	UserInfo memory newInfo = UserInfo(
-            		amount,
-			0,
-			0,
-            		block.timestamp,
-            		true
+            	amount,
+			    0,
+			    0,
+                block.timestamp,
+                true
         	);
         	userInfo[msg.sender] = newInfo;
-	}
+	    }
 
         totalStaked += amount;
 
@@ -151,48 +154,48 @@ contract ELPContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgrad
         require(info.isUsed == true, "no stake record");
         require(amount > 0 && info.totalReward - info.totalClaimed >= amount, "not enough reward to claim");
 
-	info.totalClaimed += amount;
-	info.updateTime = block.timestamp;
-	
-	totalClaimed += amount;
+        info.totalClaimed += amount;
+        info.updateTime = block.timestamp;
+        
+        totalClaimed += amount;
 
-	uint256 hourTimestamp = block.timestamp - block.timestamp % 3600;
-	bbgClaimedHourly[hourTimestamp] += amount;
+        uint256 hourTimestamp = block.timestamp - block.timestamp % 3600;
+        bbgClaimedHourly[hourTimestamp] += amount;
 
-	IERC20Upgradeable(bbgToken).safeTransfer(msg.sender, amount);
-	
-	emit Claimed(msg.sender, amount, block.timestamp);
+        IERC20Upgradeable(bbgToken).safeTransfer(msg.sender, amount);
+        
+        emit Claimed(msg.sender, amount, block.timestamp);
     }
 
     // ---- operator functions  ----
-    // 55% 
     function burnBBGHourly(uint256 ts, uint256 amount) external onlyOperator nonReentrant {
-	require(ts%3600 == 0 && ts < block.timestamp, "invalid timestamp");
-	require(burnRecord[ts] == 0, "already burned");
+        require(ts%3600 == 0 && ts < block.timestamp, "invalid timestamp");
+        require(burnRecord[ts] == 0, "already burned");
 
-	IBBGToken(bbgToken).burn(amount);
-	burnRecord[ts] = amount;
+        IBBGToken(bbgToken).burn(amount);
+        burnRecord[ts] = amount;
+	totalBurned += amount;
 
-	bbgBalanceHourly[ts] = IERC20Upgradeable(bbgToken).balanceOf(address(this));
+        bbgBalanceHourly[ts] = IERC20Upgradeable(bbgToken).balanceOf(address(this));
 
-	emit HourlyBurned(amount, ts);
+        emit HourlyBurned(ts, amount, block.timestamp);
     }
 
-    // 45% LP
-    function rewardBBGDaily(uint256 batchNo, uint256 ts, address[] calldata accounts, uint256[] calldata values) external onlyOperator nonReentrant {
-	require(ts%86400== 0 && ts < block.timestamp, "invalid timestamp");
-	require(accounts.length == values.length && accounts.length > 0, "accounts and values mismatch");
+    function rewardBBGHourly(uint256 batchNo, uint256 ts, address[] calldata accounts, uint256[] calldata values) external onlyOperator nonReentrant {
+        require(ts%3600 == 0 && ts < block.timestamp, "invalid timestamp");
+        require(accounts.length == values.length && accounts.length > 0, "accounts and values mismatch");
 
-	uint256 amount = 0;
-	for (uint i = 0; i < accounts.length; i++) {
-		amount += values[i];
-		UserInfo storage info = userInfo[accounts[i]];
-		if (info.isUsed == false || rewardRecord[accounts[i]][ts] > 0)
-			continue;
-		info.totalReward += values[i];
-		info.updateTime = block.timestamp;
-		rewardRecord[accounts[i]][ts] = amount;
-	}
-	emit DailyRewarded(batchNo, amount, ts);
+        uint256 amount = 0;
+        for (uint i = 0; i < accounts.length; i++) {
+            amount += values[i];
+	    totalReward += values[i];
+            UserInfo storage info = userInfo[accounts[i]];
+            if (info.isUsed == false || rewardRecord[accounts[i]][ts] > 0)
+                continue;
+            info.totalReward += values[i];
+            info.updateTime = block.timestamp;
+            rewardRecord[accounts[i]][ts] = amount;
+        }
+        emit HourlyRewarded(batchNo, amount, ts);
     }
 }
